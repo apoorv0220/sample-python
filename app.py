@@ -1,10 +1,7 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import CORS from flask_cors
+from flask_cors import CORS
 import json
 from transformers import AutoModelForCausalLM, AutoTokenizer
-# from pdf2image import convert_from_path
-# from pytesseract import image_to_string
-# from docx import Document
 
 app = Flask(__name__)
 CORS(app)
@@ -14,17 +11,6 @@ tokenizer = AutoTokenizer.from_pretrained("numind/NuExtract-1.5-tiny", trust_rem
 
 model.to("cpu")
 model.eval()
-
-# def pdf_to_text(file_path):
-#     pages = convert_from_path(file_path, 500)
-#     text = ""
-#     for page in pages:
-#         text += image_to_string(page)
-#     return text
-
-# def docx_to_text(file_path):
-#     doc = Document(file_path)
-#     return "\n".join([para.text for para in doc.paragraphs])
 
 def predict_NuExtract(model, tokenizer, text, schema, examples=[""]):
     input_llm = "<|input|>\n### Template:\n" + schema + "\n"
@@ -40,19 +26,16 @@ def predict_NuExtract(model, tokenizer, text, schema, examples=[""]):
     end_index = output.find("<|end-output|>")
     return output[start_index:end_index].strip()
 
+@app.route('/', methods=['GET'])
+def index():
+    return "Hello, World! The server is up and running."
+
 @app.route('/extract', methods=['POST'])
 def extract():
     data = request.json
     input_text = data.get("text")
     schema = data.get("schema")
     examples = data.get("examples", [""])
-    # is_pdf = data.get("is_pdf", False)
-    # is_docx = data.get("is_docx", False)
-
-    # if is_pdf:
-    #     input_text = pdf_to_text(input_text)
-    # elif is_docx:
-    #     input_text = docx_to_text(input_text)
 
     prediction = predict_NuExtract(model, tokenizer, input_text, schema, examples)
     return jsonify({"prediction": prediction})
